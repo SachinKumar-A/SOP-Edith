@@ -1,5 +1,5 @@
 # SOP EDITH
-🌐 **Deployed Application:** _(deploy your own instance and put the URL here)_
+
 
 **Agentic industrial-safety intelligence** — fuses live sensor, permit, maintenance, and workforce data into a compound-risk picture, drives it to a recorded human decision, and freezes the evidence into an auditable report.
 
