@@ -1,0 +1,206 @@
+from __future__ import annotations
+
+import json
+from datetime import datetime, timedelta, timezone
+from uuid import UUID
+
+from shared.python.schemas import Asset, Context
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.context.derived_facts import compute_and_persist
+from app.context.schemas import ContextIn, ContextIngestResult
+from app.reviews.ownership import resolve_worker_names
+
+
+class AssetNotFoundError(Exception):
+    def __init__(self, asset_id: UUID) -> None:
+        self.asset_id = asset_id
+        super().__init__(f"Asset {asset_id} not found")
+
+
+async def _enrich_worker_names(
+    session: AsyncSession, entries: list[Context]
+) -> list[Context]:
+    worker_ids = [
+        str(e.payload.get("worker_id"))
+        for e in entries
+        if e.category in ("worker_location", "certification")
+        and isinstance(e.payload, dict)
+        and e.payload.get("worker_id")
+    ]
+    name_map = await resolve_worker_names(session, worker_ids)
+    if not name_map:
+        return entries
+
+    enriched: list[Context] = []
+    for e in entries:
+        payload = dict(e.payload)
+        wid = payload.get("worker_id")
+        if wid and str(wid) in name_map:
+            payload["worker_name"] = name_map[str(wid)]
+        enriched.append(e.model_copy(update={"payload": payload}))
+    return enriched
+
+
+async def asset_exists(session: AsyncSession, asset_id: UUID) -> bool:
+    result = await session.execute(
+        text("SELECT 1 FROM assets WHERE id = CAST(:id AS uuid)"),
+        {"id": str(asset_id)},
+    )
+    return result.first() is not None
+
+
+async def ingest_context(
+    session: AsyncSession, body: ContextIn
+) -> ContextIngestResult:
+    if not await asset_exists(session, body.asset_id):
+        raise AssetNotFoundError(body.asset_id)
+
+    now = datetime.now(timezone.utc)
+    valid_from = body.valid_from or now
+    valid_until = body.valid_until or (now + timedelta(hours=4))
+
+    result = await session.execute(
+        text(
+            """
+            INSERT INTO context_entries (
+                asset_id, category, payload, provider,
+                valid_from, valid_until, confidence
+            )
+            VALUES (
+                CAST(:asset_id AS uuid),
+                :category,
+                CAST(:payload AS jsonb),
+                :provider,
+                :valid_from,
+                :valid_until,
+                :confidence
+            )
+            RETURNING id, asset_id, category, payload, provider,
+                      valid_from, valid_until, confidence
+            """
+        ),
+        {
+            "asset_id": str(body.asset_id),
+            "category": body.category,
+            "payload": json.dumps(body.payload),
+            "provider": body.provider,
+            "valid_from": valid_from,
+            "valid_until": valid_until,
+            "confidence": body.confidence,
+        },
+    )
+    row = result.one()
+    m = row._mapping
+    payload = m["payload"]
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+
+    context = Context(
+        id=m["id"],
+        asset_id=m["asset_id"],
+        category=m["category"],
+        payload=dict(payload),
+        provider=m["provider"],
+        valid_from=m["valid_from"],
+        valid_until=m["valid_until"],
+        confidence=float(m["confidence"]),
+    )
+    context = (await _enrich_worker_names(session, [context]))[0]
+
+    facts, changed = await compute_and_persist(
+        session, body.asset_id, now=now
+    )
+    # Deferred to avoid circular import with reviews → decisions → simulator → context.
+    from app.reviews.service import handle_context_change
+
+    review = await handle_context_change(
+        session, body.asset_id, changed, facts, actor=f"provider:{body.provider}"
+    )
+    # handle_context_change / create_review already commit; ensure context persist committed
+    await session.commit()
+
+    return ContextIngestResult(
+        context=context, derived_facts=facts, review=review
+    )
+
+
+async def list_assets(session: AsyncSession) -> list[Asset]:
+    result = await session.execute(
+        text(
+            "SELECT id, name, zone, plant_id, floor FROM assets ORDER BY floor, name"
+        )
+    )
+    return [
+        Asset(
+            id=row._mapping["id"],
+            name=row._mapping["name"],
+            zone=row._mapping["zone"],
+            plant_id=row._mapping["plant_id"],
+            floor=row._mapping["floor"] or "ground",
+        )
+        for row in result.fetchall()
+    ]
+
+
+async def get_asset(session: AsyncSession, asset_id: UUID) -> Asset | None:
+    result = await session.execute(
+        text(
+            """
+            SELECT id, name, zone, plant_id, floor FROM assets
+            WHERE id = CAST(:id AS uuid)
+            """
+        ),
+        {"id": str(asset_id)},
+    )
+    row = result.first()
+    if row is None:
+        return None
+    m = row._mapping
+    return Asset(
+        id=m["id"],
+        name=m["name"],
+        zone=m["zone"],
+        plant_id=m["plant_id"],
+        floor=m["floor"] or "ground",
+    )
+
+
+async def list_asset_context(
+    session: AsyncSession, asset_id: UUID, *, limit: int = 50
+) -> list[Context]:
+    if not await asset_exists(session, asset_id):
+        raise AssetNotFoundError(asset_id)
+    result = await session.execute(
+        text(
+            """
+            SELECT id, asset_id, category, payload, provider,
+                   valid_from, valid_until, confidence
+            FROM context_entries
+            WHERE asset_id = CAST(:asset_id AS uuid)
+            ORDER BY valid_from DESC
+            LIMIT :limit
+            """
+        ),
+        {"asset_id": str(asset_id), "limit": limit},
+    )
+    out: list[Context] = []
+    for row in result.fetchall():
+        m = row._mapping
+        payload = m["payload"]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        out.append(
+            Context(
+                id=m["id"],
+                asset_id=m["asset_id"],
+                category=m["category"],
+                payload=dict(payload),
+                provider=m["provider"],
+                valid_from=m["valid_from"],
+                valid_until=m["valid_until"],
+                confidence=float(m["confidence"]),
+            )
+        )
+    return await _enrich_worker_names(session, out)

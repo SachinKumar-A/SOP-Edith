@@ -1,0 +1,284 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  fetchProviderState,
+  type AssessmentHistoryItem,
+  type ProviderState,
+} from "@/lib/liveApi";
+import { providerTitle } from "@/lib/aiOpsProviderPresentation";
+import { useLiveStore } from "@/lib/liveStore";
+import type { RiskLevel } from "@/shared/enums";
+import styles from "./AssessmentPanel.module.css";
+
+interface AssessmentPanelProps {
+  reviewId: string;
+  reviewState: string;
+  assessment: AssessmentHistoryItem | null;
+  inProgress?: boolean;
+  /** True when a prior settled assessment exists and a new one is in flight. */
+  reassessing?: boolean;
+}
+
+export function AssessmentPanel({
+  reviewId,
+  reviewState,
+  assessment,
+  inProgress = false,
+  reassessing = false,
+}: AssessmentPanelProps) {
+  const retryAssessment = useLiveStore((s) => s.retryAssessment);
+  const submitManualAssessment = useLiveStore((s) => s.submitManualAssessment);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showManual, setShowManual] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [riskLevel, setRiskLevel] = useState<RiskLevel>("blocking");
+  const [recText, setRecText] = useState("");
+  const [recRationale, setRecRationale] = useState("");
+  const [providerState, setProviderState] = useState<ProviderState | null>(null);
+  const [retryProvider, setRetryProvider] = useState<string>("__default__");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchProviderState()
+      .then((state) => {
+        if (!cancelled) setProviderState(state);
+      })
+      .catch(() => {
+        // Retry still works with the effective default if this fails.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!assessment || inProgress) {
+    return (
+      <section className={styles.root} aria-label="Assessment" aria-busy={inProgress}>
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <h3 className={styles.title}>Assessment</h3>
+            {inProgress ? (
+              <span className={styles.chip} data-status="generating">
+                {reassessing ? "reassessing" : "generating"}
+              </span>
+            ) : null}
+          </div>
+        </header>
+        <p className={styles.empty}>
+          {inProgress
+            ? reassessing
+              ? "Prior assessment is being replaced from live signals — updated results will appear here when ready."
+              : "Assessment is being generated — results will appear here when ready."
+            : "No assessment yet — waiting for the pipeline or a Manual Assessment."}
+        </p>
+      </section>
+    );
+  }
+
+  const failed = assessment.status === "failed";
+  const canRecover = failed && reviewState === "assessing";
+
+  async function onRetry() {
+    setBusy(true);
+    setError(null);
+    try {
+      const provider =
+        retryProvider === "__default__"
+          ? undefined
+          : (retryProvider as "openai_compatible" | "ollama" | "mock");
+      await retryAssessment(reviewId, provider);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onManual() {
+    if (!summary.trim() || !recText.trim()) {
+      setError("Summary and at least one recommendation are required.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await submitManualAssessment(reviewId, {
+        summary: summary.trim(),
+        risk_level: riskLevel,
+        recommendations: [
+          {
+            text: recText.trim(),
+            rationale: recRationale.trim() || "Supervisor judgment",
+          },
+        ],
+      });
+      setShowManual(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const meta = assessment.metadata;
+  const statusLabel = assessment.status.replaceAll("_", " ");
+  const typeLabel = assessment.assessment_type.replaceAll("_", " ");
+
+  return (
+    <section className={styles.root} aria-label="Assessment">
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h3 className={styles.title}>Assessment</h3>
+        </div>
+        <div className={styles.chips}>
+          <span className={styles.chip}>{typeLabel}</span>
+          <span className={styles.chip} data-status={assessment.status}>
+            {statusLabel}
+          </span>
+        </div>
+      </header>
+
+      {meta && (
+        <p className={styles.meta}>
+          <span
+            className={styles.metaItem}
+            title={
+              meta.provider === "mock"
+                ? "No LLM is configured (AI_PROVIDER=mock). Facts, verdict and recommendations are deterministic; the narration is templated rather than generated."
+                : `Narration generated by ${meta.model}. The verdict itself is deterministic in every mode.`
+            }
+          >
+            {meta.provider === "mock" ? (
+              <>deterministic narration · no LLM configured</>
+            ) : (
+              <>
+                {meta.provider}/{meta.model}
+              </>
+            )}
+          </span>
+          <span className={styles.metaSep} aria-hidden>
+            ·
+          </span>
+          <span className={styles.metaItem}>
+            retrieval {meta.retrieval_mode}
+          </span>
+          <span className={styles.metaSep} aria-hidden>
+            ·
+          </span>
+          <span className={styles.metaItem}>
+            quality {meta.retrieval_quality}
+          </span>
+          {meta.retrieval_score != null && (
+            <>
+              <span className={styles.metaSep} aria-hidden>
+                ·
+              </span>
+              <span className={styles.metaItem}>
+                score {meta.retrieval_score.toFixed(2)}
+              </span>
+            </>
+          )}
+          <span className={styles.metaSep} aria-hidden>
+            ·
+          </span>
+          <span className={styles.metaItem}>
+            confidence {((meta.confidence ?? 0) * 100).toFixed(0)}%
+          </span>
+        </p>
+      )}
+
+      {canRecover && (
+        <div className={styles.recover}>
+          <p className={styles.recoverCopy}>
+            Assessment failed. Retry AI or author a Manual Assessment to
+            continue.
+          </p>
+          <div className={styles.actions}>
+            <label className={styles.retryProviderLabel}>
+              Provider
+              <select
+                className={styles.retryProviderSelect}
+                value={retryProvider}
+                disabled={busy}
+                onChange={(e) => setRetryProvider(e.target.value)}
+              >
+                <option value="__default__">
+                  default ({providerTitle(providerState?.env_default)})
+                </option>
+                {(providerState?.available ?? []).map((p) => (
+                  <option key={p} value={p}>
+                    {providerTitle(p)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={busy}
+              onClick={() => void onRetry()}
+            >
+              Retry AI
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => setShowManual((v) => !v)}
+            >
+              {showManual ? "Hide manual form" : "Create Manual Assessment"}
+            </button>
+          </div>
+
+          {showManual && (
+            <div className={styles.manualForm}>
+              <label className={styles.field}>
+                Risk level
+                <select
+                  className={styles.fieldControl}
+                  value={riskLevel}
+                  onChange={(e) => setRiskLevel(e.target.value as RiskLevel)}
+                >
+                  <option value="nominal">nominal</option>
+                  <option value="elevated">elevated</option>
+                  <option value="blocking">blocking</option>
+                </select>
+              </label>
+              <textarea
+                className={styles.fieldControl}
+                placeholder="Summary"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                rows={3}
+              />
+              <input
+                className={styles.fieldControl}
+                placeholder="Recommendation"
+                value={recText}
+                onChange={(e) => setRecText(e.target.value)}
+              />
+              <input
+                className={styles.fieldControl}
+                placeholder="Rationale"
+                value={recRationale}
+                onChange={(e) => setRecRationale(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busy}
+                onClick={() => void onManual()}
+              >
+                Submit Manual Assessment
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <p className={styles.error}>{error}</p>}
+    </section>
+  );
+}

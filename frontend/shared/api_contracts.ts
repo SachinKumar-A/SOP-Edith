@@ -1,0 +1,102 @@
+/**
+ * REST + WebSocket contract surface (TDS §8).
+ * Phase 0 freezes this list; later phases implement routes behind these shapes.
+ */
+
+export const REST_GROUPS = {
+  reviews: [
+    "POST /reviews",
+    "GET /reviews",
+    "GET /reviews/{id}",
+    "GET /reviews/raised-by-me",
+    "GET /reviews/shared-with-me",
+    "GET /reviews/in-my-zones",
+    "POST /reviews/{id}/reopen",
+    "POST /reviews/{id}/close",
+    "GET /reviews/{id}/comments",
+    "POST /reviews/{id}/comments",
+  ],
+  context: ["POST /context", "GET /assets", "GET /assets/{id}/context", "GET /assets/{id}/owner"],
+  assessments: [
+    "GET /reviews/{id}/assessments",
+    "POST /reviews/{id}/assessments/retry",
+    "POST /reviews/{id}/assessments/manual",
+  ],
+  decisions: ["POST /reviews/{id}/decisions"],
+  tasks: [
+    "GET /tasks",
+    "POST /tasks/{id}/acknowledge",
+    "POST /tasks/{id}/done",
+  ],
+  reports: [
+    "GET /reports",
+    "GET /reports/export.xlsx",
+    "GET /reviews/{id}/reports",
+    "GET /reports/{id}",
+    "GET /reports/{id}/export.pdf",
+    "GET /reports/{id}/export.xlsx",
+  ],
+  notifications: ["GET /notifications"],
+  handover: [
+    "GET /handover/current",
+    "GET /handover/gaps",
+    "GET /handover/metrics",
+    "POST /handover/draft",
+    "POST /handover/{id}/notes",
+    "DELETE /handover/{id}/items/{itemId}",
+    "POST /handover/{id}/issue",
+    "POST /handover/{id}/items/{itemId}/ack",
+    "POST /handover/{id}/accept",
+  ],
+  aiOps: ["GET /ai-ops/summary"],
+  demo: [
+    "POST /demo/scenarios/{name}/start",
+    "POST /demo/scenarios/{name}/arm",
+    "POST /demo/step",
+    "POST /demo/reset",
+    "GET /demo/scenarios",
+  ],
+  /** Phase 0 scaffolding only */
+  health: ["GET /health", "GET /api/ping"],
+} as const;
+
+export const WS_EVENTS = [
+  "review.status_changed",
+  "assessment.completed",
+  "assessment.failed",
+  "decision.submitted",
+  "report.generated",
+  "comment.created",
+  "task.created",
+  "task.acknowledged",
+  "task.completed",
+  "task.cancelled",
+  "notification.created",
+  "handover.issued",
+  "handover.item_acknowledged",
+  "handover.accepted",
+  // W1 · Emergency Response Orchestrator. `action_revoked` covers both an abort
+  // during the arming window and a revocation after execution — the rail shows
+  // the distinction from the action's status, not from the event name.
+  "response.action_armed",
+  "response.action_executed",
+  "response.action_revoked",
+  "response.page_dispatched",
+  "response.page_acknowledged",
+  "response.device_changed",
+  "echo",
+] as const;
+
+export type WsEventType = (typeof WS_EVENTS)[number];
+
+export interface WsEnvelope<T = unknown> {
+  type: WsEventType | string;
+  payload: T;
+  ts: string;
+}
+
+export interface PingResponse {
+  ok: true;
+  service: "sop-edith-api";
+  message: string;
+}

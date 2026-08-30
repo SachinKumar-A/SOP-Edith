@@ -1,0 +1,219 @@
+.wrap {
+  --affected-panel-width: 280px;
+  position: relative;
+  height: calc(100vh - var(--nav-height));
+  min-height: 480px;
+  background: var(--surface-canvas);
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  transition: left var(--duration-normal) var(--ease-out);
+}
+
+.stage[data-resizing="true"] {
+  transition: none;
+}
+
+.stage[data-affected-inset="true"] {
+  left: calc(
+    var(--space-3) + var(--affected-panel-width) + var(--space-3)
+  );
+}
+
+.detailPane {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform-origin: center center;
+}
+
+.detailPane[data-exiting="true"] {
+  animation: zoom-out-to-overview 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  pointer-events: none;
+}
+
+.detailPane[data-exiting="true"] .floorSlide {
+  animation: none;
+}
+
+.floorSlide {
+  width: 100%;
+  height: 100%;
+  animation: detail-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.floorSlide[data-slide="left"] {
+  animation-name: slide-from-right;
+}
+
+.floorSlide[data-slide="right"] {
+  animation-name: slide-from-left;
+}
+
+.floorSlide[data-slide="in"] {
+  animation-name: zoom-in-detail;
+}
+
+.floorSlide[data-slide="out"] {
+  animation: none;
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(4.5%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-4.5%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes zoom-in-detail {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoom-out-to-overview {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.84);
+  }
+}
+
+.floorTabs {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-canvas) 88%, var(--border-muted));
+  border: 1px solid var(--border-muted);
+  width: max-content;
+}
+
+.floorTabSlider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: var(--surface-card, var(--surface-raised, var(--surface-panel)));
+  border: 1px solid var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    transform var(--duration-normal) var(--ease-out),
+    width var(--duration-normal) var(--ease-out);
+}
+
+.floorTab {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  padding: 0.4rem 0.65rem;
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.floorTab:hover {
+  color: var(--text-secondary);
+}
+
+.floorTab[data-active="true"] {
+  color: var(--text-primary);
+}
+
+.floorTabLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.floorTab[data-active="true"] .floorTabLabel {
+  font-weight: var(--weight-semibold);
+}
+
+.floorBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: var(--status-elevated);
+  color: #111;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+.floorFresh {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent-ok);
+}
+
+@media (max-width: 640px) {
+  .stage[data-affected-inset="true"] {
+    left: 0;
+  }
+
+  .floorTabs {
+    top: auto;
+    bottom: calc(var(--space-3) + 3.25rem);
+  }
+}

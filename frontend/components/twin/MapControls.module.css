@@ -1,0 +1,112 @@
+.controls {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 40px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-sm);
+  transition: right var(--duration-normal) var(--ease-out);
+  pointer-events: auto;
+}
+
+:global([data-panel-resizing="true"]) .controls {
+  transition: none;
+}
+
+.controls[data-shift="true"] {
+  right: calc(var(--drawer-width) + var(--space-4));
+}
+
+@media (max-width: 820px) {
+  .controls[data-shift="true"] {
+    right: var(--space-4);
+  }
+}
+
+.btn {
+  width: 100%;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--interactive-hover);
+  color: var(--accent-selection);
+}
+
+.btn:active {
+  transform: scale(0.88);
+  transition-duration: 60ms;
+}
+
+.btn + .btn {
+  border-top: 1px solid var(--border-muted);
+}
+
+.btnReset {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.btnReset span {
+  display: inline-block;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.btnReset:hover span {
+  transform: rotate(45deg);
+}
+
+.btnOverview svg {
+  display: block;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.btnOverview:hover svg {
+  transform: scale(1.08);
+}
+
+.btnOps {
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.btnOps:hover {
+  color: var(--accent-selection);
+}
+
+.btnOps[data-active="true"] {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent-selection) 18%, var(--surface-panel));
+  box-shadow: inset 2px 0 0 var(--accent-selection);
+}
+
+.opsLabel {
+  line-height: 1;
+}

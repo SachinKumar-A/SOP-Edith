@@ -1,0 +1,63 @@
+/**
+ * Blueprint — engineering-drawing navy with cyan selection.
+ */
+
+[data-theme="blueprint"] {
+  --surface-app: #0a1628;
+  --surface-panel: #0f1e35;
+  --surface-card: #142842;
+  --surface-overlay: #152c48;
+  --surface-canvas: #071221;
+  --surface-nav: #0c1a30;
+  --surface-demo: #081526;
+
+  --border-default: #1e3a5f;
+  --border-muted: #162e4c;
+  --border-hover: #2a5080;
+  --border-focus: #3db8e8;
+  --border-selected: #2a9fc9;
+
+  --text-primary: #d6e4f0;
+  --text-secondary: #8fa8c0;
+  --text-muted: #5a748c;
+  --text-inverse: #0a1628;
+  --text-on-accent: #f0f7fc;
+  --text-link: #5cc8f0;
+
+  --interactive-default: #142842;
+  --interactive-hover: #1a3354;
+  --interactive-active: #1e3a5f;
+  --interactive-disabled: #0f1e35;
+
+  --status-nominal: #3ecf8e;
+  /* Success/health accent. Aliases the nominal status colour so the two
+     never drift; 40 call sites across 11 modules referenced --accent-ok
+     while no theme defined it, silently falling back to a literal. */
+  --accent-ok: var(--status-nominal);
+  --status-elevated: #e6a817;
+  --status-blocking: #e35d6a;
+  --status-critical: #ff4757;
+  --status-critical-foreground: #ffffff;
+  --status-critical-muted: color-mix(in srgb, var(--status-critical) 24%, transparent);
+  --status-info: #3db8e8;
+  --status-nominal-muted: color-mix(in srgb, var(--status-nominal) 18%, transparent);
+  --status-elevated-muted: color-mix(in srgb, var(--status-elevated) 18%, transparent);
+  --status-blocking-muted: color-mix(in srgb, var(--status-blocking) 18%, transparent);
+  --status-info-muted: color-mix(in srgb, var(--status-info) 18%, transparent);
+
+  --accent-selection: #3db8e8;
+  --accent-ai: #a78bcf;
+
+  --domain-sensors: #3ecf8e;
+  --domain-permits: #e6a817;
+  --domain-people: #5cc8f0;
+  --domain-evidence: #a78bcf;
+  --domain-spatial: #3db8e8;
+  --domain-response: #f2765c;
+
+  /* Archive tone — History looks backwards, so it stays recessive. */
+  --domain-history: #8ba0ad;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-drawer: -4px 0 24px rgba(0, 0, 0, 0.4);
+}

@@ -1,0 +1,88 @@
+/* Full-screen dim used for centered act cards (no element to reveal). */
+.fullDim {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  background: color-mix(in srgb, #000 62%, transparent);
+  backdrop-filter: blur(1.5px);
+  animation: dim-in var(--duration-normal, 200ms) var(--ease-out) both;
+}
+
+/*
+ * Viewport-sized dim with a clip-path cutout. Visual only — the blocker (or
+ * interactive bands) owns hit-testing so the hole can't leak clicks.
+ */
+.blocker {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  background: transparent;
+}
+
+.dim {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, #000 62%, transparent);
+  backdrop-filter: blur(1.5px);
+  animation: dim-in var(--duration-fast, 120ms) var(--ease-out) both;
+  /* Instant clip updates — animating clip-path between steps felt like lag. */
+  transition: none;
+}
+
+/*
+ * Interactive-step framing. Each band swallows clicks outside the cutout while
+ * the cutout itself stays live, so the user clicks the real UI.
+ */
+.band {
+  position: fixed;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Accent frame around the revealed target — separate from the dim so glow
+   never depends on a giant box-shadow that ancestors can clip. */
+.ring {
+  position: fixed;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--accent-ai) 75%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #000 35%, transparent),
+    0 0 22px 4px color-mix(in srgb, var(--accent-ai) 45%, transparent);
+  /* Snap the ring; pulse still gives life without layout lag. */
+  transition: none;
+  animation: halo-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes halo-pulse {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--accent-ai) 70%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, #000 35%, transparent),
+      0 0 22px 4px color-mix(in srgb, var(--accent-ai) 40%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--accent-ai) 95%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, #000 35%, transparent),
+      0 0 30px 7px color-mix(in srgb, var(--accent-ai) 60%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+  }
+  .fullDim,
+  .dim {
+    backdrop-filter: none;
+  }
+}

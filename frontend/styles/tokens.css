@@ -1,0 +1,97 @@
+/**
+ * Semantic design tokens — names + non-color scales.
+ * Color values live only in styles/themes/*.css.
+ */
+
+:root {
+  /* Layout */
+  --nav-height: 48px;
+  --drawer-width: 380px;
+  --drawer-width-expanded: 720px;
+
+  /* Stacking — the guided tour sits above all app chrome (nav, menus,
+     ShiftGate, toasts top out around 9999). No other z-index scale exists. */
+  --z-tour: 10000;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Typography — Geist UI, Satoshi headings, Plus Jakarta labels */
+  --font-sans: var(--font-geist-sans), Geist, system-ui, sans-serif;
+  --font-display: var(--font-display-loaded), Satoshi, var(--font-sans);
+  --font-label: var(--font-label-loaded), "Plus Jakarta Sans", var(--font-sans);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --text-2xs: 0.6875rem; /* 11px — compact metadata */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-md: 0.9375rem; /* 15px — body */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-xl: 1.1875rem; /* 19px */
+  --text-2xl: 1.6875rem; /* 27px */
+  --text-3xl: 2.1875rem; /* 35px */
+  --text-4xl: 2.9375rem; /* 47px */
+  /* Display steps — marketing surfaces only (landing, login). Fluid so the
+     hero holds its proportions from phone to ultrawide. */
+  --text-5xl: clamp(2.5rem, 1.6rem + 3.6vw, 3.75rem); /* 40 → 60px */
+  --text-6xl: clamp(3rem, 1.7rem + 5.2vw, 4.75rem); /* 48 → 76px */
+  --leading-display: 1.05;
+  --leading-tight: 1.25;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.55;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --tracking-label: 0.06em;
+
+  /* Radius */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Scrollbars — thin & theme-aware */
+  --scrollbar-size: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 45%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--text-muted) 70%, transparent);
+
+  /* Brand logo — ink follows text via currentColor on the SVG */
+  --logo-ink: var(--text-primary);
+  --logo-face: var(--text-primary);
+}
+
+/**
+ * Below 640px the primary nav wraps to a second row (see
+ * components/nav/TopNav.module.css). --nav-height is the single source every
+ * full-height surface sizes against — `height: calc(100vh - var(--nav-height))`
+ * on the twin, reports, eval, history, handover, ai-ops and the supervisor
+ * board, plus TourOverlay.tsx:75 which re-reads it from computed style. Raising
+ * the token here keeps all of them correct instead of each guessing.
+ */
+@media (max-width: 640px) {
+  :root {
+    /* Two 34px control rows + 8px row-gap + 2x8px block padding = 92px, plus
+       4px slack. At 88px the rows centred 2px outside the box and the tab pill
+       sat above the nav's top edge. */
+    --nav-height: 96px;
+  }
+}

@@ -1,0 +1,64 @@
+/**
+ * Mission Control — default calm industrial grayscale.
+ * ~90% monochrome; color is semantic only.
+ */
+
+[data-theme="mission-control"] {
+  --surface-app: #0c0e11;
+  --surface-panel: #14171c;
+  --surface-card: #1a1e24;
+  --surface-overlay: #1c2128;
+  --surface-canvas: #0a0c0f;
+  --surface-nav: #12151a;
+  --surface-demo: #0e1014;
+
+  --border-default: #2a3038;
+  --border-muted: #22262d;
+  --border-hover: #3a424d;
+  --border-focus: #5a8fd4;
+  --border-selected: #4a7ab8;
+
+  --text-primary: #e6e8eb;
+  --text-secondary: #a8afb8;
+  --text-muted: #6b7380;
+  --text-inverse: #0c0e11;
+  --text-on-accent: #f4f6f8;
+  --text-link: #7aa4d4;
+
+  --interactive-default: #1a1e24;
+  --interactive-hover: #22272e;
+  --interactive-active: #2a3038;
+  --interactive-disabled: #16191e;
+
+  --status-nominal: #4caf7a;
+  /* Success/health accent. Aliases the nominal status colour so the two
+     never drift; 40 call sites across 11 modules referenced --accent-ok
+     while no theme defined it, silently falling back to a literal. */
+  --accent-ok: var(--status-nominal);
+  --status-elevated: #c9a227;
+  --status-blocking: #d45d67;
+  --status-critical: #ef4444;
+  --status-critical-foreground: #ffffff;
+  --status-critical-muted: color-mix(in srgb, var(--status-critical) 24%, transparent);
+  --status-info: #5a8fd4;
+  --status-nominal-muted: color-mix(in srgb, var(--status-nominal) 18%, transparent);
+  --status-elevated-muted: color-mix(in srgb, var(--status-elevated) 18%, transparent);
+  --status-blocking-muted: color-mix(in srgb, var(--status-blocking) 18%, transparent);
+  --status-info-muted: color-mix(in srgb, var(--status-info) 18%, transparent);
+
+  --accent-selection: #5a8fd4;
+  --accent-ai: #9b7bb8;
+
+  --domain-sensors: #5a9e8a;
+  --domain-permits: #c9a227;
+  --domain-people: #6b8fc4;
+  --domain-evidence: #9b7bb8;
+  --domain-spatial: #7a9eb8;
+  --domain-response: #c67b5c;
+
+  /* Archive tone — History looks backwards, so it stays recessive. */
+  --domain-history: #8a9099;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-drawer: -4px 0 24px rgba(0, 0, 0, 0.35);
+}

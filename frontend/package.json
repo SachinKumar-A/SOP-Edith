@@ -1,0 +1,35 @@
+{
+  "name": "sop-opera-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync-shared": "node ../scripts/sync-shared.mjs",
+    "predev": "node -e \"require('fs').accessSync('../scripts/sync-shared.mjs')\" && npm run sync-shared || true",
+    "dev": "next dev",
+    "prebuild": "node -e \"require('fs').accessSync('../scripts/sync-shared.mjs')\" && npm run sync-shared || true",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "d3-force": "^3.0.0",
+    "framer-motion": "^12.42.2",
+    "geist": "^1.7.2",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-force-graph-2d": "^1.29.1",
+    "react-toastify": "^11.1.0",
+    "react-zoom-pan-pinch": "^4.0.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "^15.5.20",
+    "typescript": "^5.8.0"
+  }
+}

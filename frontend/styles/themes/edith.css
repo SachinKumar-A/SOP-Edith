@@ -1,0 +1,66 @@
+/**
+ * EDITH — control-room steel blue.
+ * Colour only: no sizing, spacing or typography tokens live here, so switching
+ * to this theme cannot change layout. Status hues keep their semantics
+ * (nominal / elevated / blocking / critical) because they carry meaning.
+ */
+
+:root,
+[data-theme="edith"] {
+  --surface-app: #0a0f16;
+  --surface-panel: #121a24;
+  --surface-card: #17212d;
+  --surface-overlay: #1a2531;
+  --surface-canvas: #070c11;
+  --surface-nav: #0e1620;
+  --surface-demo: #0c131b;
+
+  --border-default: #253340;
+  --border-muted: #1c2733;
+  --border-hover: #35485a;
+  --border-focus: #4a90d9;
+  --border-selected: #3d7ab8;
+
+  --text-primary: #e8edf2;
+  --text-secondary: #a3b1c0;
+  --text-muted: #667888;
+  --text-inverse: #0a0f16;
+  --text-on-accent: #f5f8fb;
+  --text-link: #6fa8dc;
+
+  --interactive-default: #17212d;
+  --interactive-hover: #1f2b39;
+  --interactive-active: #273545;
+  --interactive-disabled: #131b24;
+
+  --status-nominal: #3fb984;
+  /* Success/health accent. Aliases the nominal status colour so the two
+     never drift — see mission-control.css for why this alias exists. */
+  --accent-ok: var(--status-nominal);
+  --status-elevated: #d4a428;
+  --status-blocking: #e0616c;
+  --status-critical: #f04444;
+  --status-critical-foreground: #ffffff;
+  --status-critical-muted: color-mix(in srgb, var(--status-critical) 24%, transparent);
+  --status-info: #4a90d9;
+  --status-nominal-muted: color-mix(in srgb, var(--status-nominal) 18%, transparent);
+  --status-elevated-muted: color-mix(in srgb, var(--status-elevated) 18%, transparent);
+  --status-blocking-muted: color-mix(in srgb, var(--status-blocking) 18%, transparent);
+  --status-info-muted: color-mix(in srgb, var(--status-info) 18%, transparent);
+
+  --accent-selection: #4a90d9;
+  --accent-ai: #a37fc4;
+
+  --domain-sensors: #4fa894;
+  --domain-permits: #d4a428;
+  --domain-people: #6f96cf;
+  --domain-evidence: #a37fc4;
+  --domain-spatial: #7fa8c4;
+  --domain-response: #d08661;
+
+  /* Archive tone — History looks backwards, so it stays recessive. */
+  --domain-history: #8592a0;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.34);
+  --shadow-drawer: -4px 0 24px rgba(0, 0, 0, 0.4);
+}

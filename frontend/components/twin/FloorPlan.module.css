@@ -1,0 +1,500 @@
+.plan {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.canvasBg {
+  fill: var(--surface-canvas);
+}
+
+.canvasDot {
+  fill: var(--border-muted);
+}
+
+.schematic {
+  pointer-events: none;
+  /* Floor-plan paint tokens — inherit into inlined SVG (outer .fps-root is stripped). */
+  --fp-canvas: transparent;
+  --fp-surface: var(--surface-card);
+  --fp-surface-mute: color-mix(in srgb, var(--surface-panel) 75%, transparent);
+  --fp-panel: var(--surface-panel);
+  --fp-panel-soft: color-mix(in srgb, var(--surface-card) 80%, transparent);
+  --fp-line: var(--border-muted);
+  --fp-line-strong: var(--border-default);
+  --fp-ink: var(--text-primary);
+  --fp-ink-mute: var(--text-secondary);
+  --fp-ink-faint: var(--text-muted);
+  --fp-accent: var(--accent-selection);
+  --fp-accent-soft: color-mix(in srgb, var(--accent-selection) 22%, transparent);
+  --fp-hot: color-mix(in srgb, var(--status-blocking) 55%, var(--status-elevated) 45%);
+  --fp-hot-soft: color-mix(in srgb, var(--status-blocking) 18%, transparent);
+  --fp-success: var(--status-nominal);
+  --fp-success-soft: var(--status-nominal-muted);
+  --fp-warn: var(--status-elevated);
+  --fp-info: var(--status-info);
+  --fp-info-soft: var(--status-info-muted);
+  --fp-dot: color-mix(in srgb, var(--border-muted) 55%, transparent);
+  --fp-hazard: color-mix(in srgb, var(--status-elevated) 70%, transparent);
+  --fp-shadow: color-mix(in srgb, var(--surface-app) 55%, transparent);
+}
+
+.hitRegion {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 2;
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hitRegion[data-risk="nominal"] {
+  fill: color-mix(in srgb, var(--status-nominal) 16%, transparent);
+  stroke: color-mix(in srgb, var(--status-nominal) 42%, transparent);
+}
+
+.hitRegion[data-risk="elevated"] {
+  fill: color-mix(in srgb, var(--status-elevated) 32%, transparent);
+  stroke: color-mix(in srgb, var(--status-elevated) 75%, transparent);
+}
+
+.hitRegion[data-risk="blocking"] {
+  fill: color-mix(in srgb, var(--status-blocking) 36%, transparent);
+  stroke: color-mix(in srgb, var(--status-blocking) 82%, transparent);
+  animation: breathe-opacity 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.hitRegion[data-risk="halted"] {
+  fill: color-mix(in srgb, var(--text-muted) 18%, transparent);
+  stroke: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  stroke-dasharray: 4 3;
+}
+
+.hitRegion[data-sensor-critical="true"] {
+  fill: color-mix(in srgb, var(--status-critical) 48%, transparent);
+  stroke: var(--status-critical);
+  animation: breathe-opacity-critical 1.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.hitRegion:hover {
+  /* Hover feedback should read instantly, not mid-breath. */
+  animation: none;
+  opacity: 1;
+  transform: scale(1.01);
+}
+
+.hitRegion:hover,
+.hitRegion[data-risk="nominal"]:hover {
+  fill: color-mix(in srgb, var(--status-nominal) 22%, transparent);
+  stroke: color-mix(in srgb, var(--status-nominal) 65%, transparent);
+}
+
+.hitRegion[data-risk="elevated"]:hover {
+  fill: color-mix(in srgb, var(--status-elevated) 22%, transparent);
+  stroke: color-mix(in srgb, var(--status-elevated) 65%, transparent);
+}
+
+.hitRegion[data-risk="blocking"]:hover {
+  fill: color-mix(in srgb, var(--status-blocking) 24%, transparent);
+  stroke: color-mix(in srgb, var(--status-blocking) 70%, transparent);
+}
+
+.hitRegion[data-selected="true"] {
+  animation: none;
+  opacity: 1;
+  stroke: var(--accent-selection);
+  stroke-width: 2.5;
+  fill: color-mix(in srgb, var(--accent-selection) 12%, transparent);
+}
+
+.hitRegion[data-selected="true"]:hover {
+  fill: color-mix(in srgb, var(--accent-selection) 20%, transparent);
+  stroke: var(--accent-selection);
+}
+
+@keyframes breathe-opacity {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes breathe-opacity-critical {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hitRegion[data-risk="blocking"],
+  .hitRegion[data-sensor-critical="true"] {
+    animation: none;
+  }
+}
+
+/* Zone risk halo — fine dotted ring, light wash; reads apart from solid hit fills */
+.zoneHalo {
+  fill: transparent;
+  stroke-width: 1.75;
+  stroke-dasharray: 3 7;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.zoneHalo[data-severity="elevated"] {
+  fill: color-mix(in srgb, var(--status-elevated) 6%, transparent);
+  stroke: color-mix(in srgb, var(--status-elevated) 55%, transparent);
+}
+
+.zoneHalo[data-severity="blocking"] {
+  fill: color-mix(in srgb, var(--status-blocking) 7%, transparent);
+  stroke: color-mix(in srgb, var(--status-blocking) 65%, transparent);
+  animation: breathe-opacity-halo 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.zoneHalo[data-severity="critical"] {
+  fill: color-mix(in srgb, var(--status-critical) 7%, transparent);
+  stroke: color-mix(in srgb, var(--status-critical) 70%, transparent);
+  animation: breathe-opacity-halo 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes breathe-opacity-halo {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoneHalo[data-severity="blocking"],
+  .zoneHalo[data-severity="critical"] {
+    animation: none;
+  }
+}
+
+/* Ops chips — circular badges matching AssetMarker language */
+.opsChipRow {
+  pointer-events: auto;
+}
+
+.opsChip {
+  cursor: pointer;
+  outline: none;
+}
+
+.opsChipBg {
+  fill: var(--surface-panel);
+  stroke: color-mix(in srgb, var(--text-primary) 35%, var(--border-default));
+  stroke-width: 2;
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--surface-app) 55%, transparent));
+  transition:
+    fill var(--duration-fast) var(--ease-out),
+    stroke var(--duration-fast) var(--ease-out);
+}
+
+.opsChipIcon {
+  display: block;
+  overflow: visible;
+  stroke: var(--text-secondary);
+  fill: none;
+  pointer-events: none;
+  transition: stroke var(--duration-fast) var(--ease-out);
+}
+
+.opsChipIcon path {
+  stroke: inherit;
+}
+
+.opsChip:hover .opsChipBg,
+.opsChip:focus-within .opsChipBg {
+  stroke: var(--accent-selection);
+  fill: color-mix(in srgb, var(--accent-selection) 10%, var(--surface-panel));
+}
+
+.opsChip:hover .opsChipIcon,
+.opsChip:focus-within .opsChipIcon {
+  stroke: var(--accent-selection);
+}
+
+.opsChip[data-warn="true"] .opsChipBg {
+  fill: color-mix(in srgb, var(--status-elevated) 16%, var(--surface-panel));
+  stroke: color-mix(in srgb, var(--status-elevated) 75%, transparent);
+}
+
+.opsChip[data-warn="true"] .opsChipIcon {
+  stroke: var(--status-elevated);
+}
+
+.opsChip[data-warn="true"]:hover .opsChipBg,
+.opsChip[data-warn="true"]:focus-within .opsChipBg {
+  fill: color-mix(in srgb, var(--status-elevated) 24%, var(--surface-panel));
+  stroke: var(--status-elevated);
+}
+
+.opsChip[data-warn="true"]:hover .opsChipIcon,
+.opsChip[data-warn="true"]:focus-within .opsChipIcon {
+  stroke: var(--status-elevated);
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 40;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+  animation: tooltip-in 140ms var(--ease-out);
+  font-family: var(--font-sans);
+  line-height: 1;
+}
+
+.tooltipLead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.tooltipMeta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 15px;
+}
+
+.tooltipMeta[hidden] {
+  display: none;
+}
+
+.tooltip[data-place="below"] {
+  transform: translate(-50%, 12px);
+  animation-name: tooltip-in-below;
+}
+
+.tooltipDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--status-nominal);
+}
+
+.tooltip[data-risk="nominal"] {
+  border-color: color-mix(in srgb, var(--status-nominal) 40%, var(--border-default));
+}
+
+.tooltip[data-risk="nominal"] .tooltipDot {
+  background: var(--status-nominal);
+}
+
+.tooltip[data-risk="elevated"] {
+  border-color: color-mix(in srgb, var(--status-elevated) 45%, var(--border-default));
+}
+
+.tooltip[data-risk="elevated"] .tooltipDot {
+  background: var(--status-elevated);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--status-elevated) 55%, transparent);
+}
+
+.tooltip[data-risk="blocking"] {
+  border-color: color-mix(in srgb, var(--status-blocking) 50%, var(--border-default));
+}
+
+.tooltip[data-risk="blocking"] .tooltipDot {
+  background: var(--status-blocking);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--status-blocking) 60%, transparent);
+}
+
+.tooltip[data-risk="halted"] {
+  border-color: color-mix(in srgb, var(--text-muted) 45%, var(--border-default));
+}
+
+.tooltip[data-risk="halted"] .tooltipDot {
+  background: color-mix(in srgb, var(--text-muted) 55%, var(--surface-panel));
+  border: 1px dashed color-mix(in srgb, var(--status-blocking) 50%, var(--text-muted));
+}
+
+.tooltipName {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.tooltipRisk,
+.tooltipOps {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  line-height: 1;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Explicit display beats the UA [hidden] rule — keep these truly gone. */
+.tooltipRisk[hidden],
+.tooltipOps[hidden],
+.tooltipFresh[hidden],
+.tooltipSep[hidden] {
+  display: none;
+}
+
+.tooltipRisk {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+}
+
+.tooltip[data-kind="ops"] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+}
+
+.tooltip[data-kind="ops"] .tooltipDot {
+  display: none;
+}
+
+.tooltipSep {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1;
+  opacity: 0.55;
+  user-select: none;
+}
+
+.tooltipOps {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--border-muted) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-default) 65%, transparent);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltipFresh {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  gap: 0.35rem;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--accent-ok);
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-ok) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-ok) 42%, transparent);
+}
+
+.tooltipFresh::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--accent-ok);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent-ok) 55%, transparent);
+}
+
+.tooltip[data-risk="nominal"] .tooltipRisk {
+  color: var(--status-nominal);
+  background: color-mix(in srgb, var(--status-nominal) 14%, transparent);
+}
+
+.tooltip[data-risk="elevated"] .tooltipRisk {
+  color: var(--status-elevated);
+  background: color-mix(in srgb, var(--status-elevated) 16%, transparent);
+}
+
+.tooltip[data-risk="blocking"] .tooltipRisk {
+  color: var(--status-blocking);
+  background: color-mix(in srgb, var(--status-blocking) 16%, transparent);
+}
+
+.tooltip[data-risk="halted"] .tooltipRisk {
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+}
+
+@keyframes tooltip-in-below {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 12px);
+  }
+}
+
+/* Automatic-response equipment currently engaged on this asset's zone. */
+.responseBadge rect {
+  fill: color-mix(in srgb, var(--status-elevated-muted) 92%, transparent);
+  stroke: var(--status-elevated);
+  stroke-width: 0.75;
+}
+
+.responseBadge text {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  fill: var(--text-primary);
+}
+

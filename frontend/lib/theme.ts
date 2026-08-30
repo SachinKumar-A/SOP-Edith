@@ -1,0 +1,23 @@
+export const THEME_STORAGE_KEY = "sop-edith-theme";
+
+export const THEMES = [
+  { id: "edith", label: "EDITH" },
+  { id: "mission-control", label: "Mission Control" },
+  { id: "vscode-dark", label: "VS Code Dark" },
+  { id: "github-dark", label: "GitHub Dark" },
+  { id: "light", label: "Light" },
+  { id: "blueprint", label: "Blueprint" },
+  { id: "catppuccin", label: "Catppuccin" },
+] as const;
+
+export type ThemeId = (typeof THEMES)[number]["id"];
+
+export const DEFAULT_THEME: ThemeId = "edith";
+
+export function isThemeId(value: string | null | undefined): value is ThemeId {
+  return THEMES.some((t) => t.id === value);
+}
+
+export function resolveTheme(value: string | null | undefined): ThemeId {
+  return isThemeId(value) ? value : DEFAULT_THEME;
+}

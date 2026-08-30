@@ -1,0 +1,170 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
+_BACKEND_ENV = Path(__file__).resolve().parents[2] / ".env"
+_ENV_FILES = tuple(
+    str(p) for p in (_BACKEND_ENV, _ROOT_ENV) if p.is_file()
+) or (".env",)
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=_ENV_FILES,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    database_url: str = "postgresql+asyncpg://sop:sop@localhost:5433/sop_opera"
+    # Standalone corpus DB used by scripts/seed_history.py (the full audit-chain-
+    # valid year-long build) — not read by the running app. Mock data shown via
+    # the in-app "seeded mode" toggle lives tagged (reviews.is_seeded) in the
+    # primary database instead; see db/session.py and scripts/quick_mock_seed.py.
+    history_database_url: str = "postgresql+asyncpg://sop:sop@localhost:5433/sop_opera_history"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001"
+    # Allow Next.js dev fallback ports (and 127.0.0.1) without editing CORS_ORIGINS each time.
+    cors_localhost_regex: str = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+
+    # Keep this `mock`. `handover/service.py` and `agents/graph.py` read it
+    # directly, so the code default is what an install with no AI_PROVIDER in
+    # .env actually runs on — it has to be the provider that needs nothing.
+    ai_provider: str = "mock"
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4o-mini"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2"
+
+    assessment_max_retries: int = 1
+    # Parallel in-process assessment workers (durable claim via SKIP LOCKED).
+    assessment_worker_count: int = 2
+    # A claimed job whose worker died is reclaimable after this long. Must exceed
+    # the worst-case job duration (retrieval + agent graph + LLM) or a healthy
+    # job will be stolen mid-flight.
+    assessment_lease_seconds: int = 300
+
+    db_pool_size: int = 20
+    db_max_overflow: int = 10
+    # Elevated = compound-engine early warning (sub-critical co-occurrence).
+    # Critical = single-sensor "incident threshold" — baseline alarm line for
+    # false-negative / lead-time eval. Critical must stay above elevated.
+    gas_elevated_threshold: float = 20.0
+    gas_critical_threshold: float = 50.0
+    temp_elevated_threshold: float = 80.0
+    temp_critical_threshold: float = 120.0
+    vibration_anomaly_threshold: float = 7.1
+    effluent_ph_min: float = 6.0
+    effluent_ph_max: float = 9.0
+    tank_level_high_pct: float = 95.0
+    tank_level_low_pct: float = 5.0
+    weather_wind_hold_ms: float = 15.0
+    cert_expiry_warning_days: int = 14
+    # "Blind, not safe" (W3a): sensor coverage is an orthogonal field beside
+    # risk_level, never a risk level. No reading newer than this → the channel
+    # is blind. Staleness is measured against the live telemetry path — the
+    # ambient soft tick writes a `sensor` row to telemetry_samples for
+    # `ambient_batch_size` assets every `ambient_tick_seconds`, so with the
+    # defaults (2 assets / 3s) a 27-asset plant completes a full sweep in ~42s
+    # and 180 tolerates roughly four missed sweeps. Raise this if you raise
+    # ambient_tick_seconds or shrink ambient_batch_size, or assets will go
+    # blind between their own heartbeats. See app/context/coverage.py.
+    sensor_stale_after_seconds: int = 180
+    # Self-reported degradation: a sensor entry below this confidence (or with a
+    # fault payload) marks coverage degraded. Detected by rule_sensor_unreliable.
+    sensor_confidence_floor: float = 0.5
+    default_owner_user_id: str = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    simulator_default_step_delay_seconds: int = 5
+    random_max_concurrent_issues: int = 8
+    random_spawn_interval_min_seconds: float = 4.0
+    random_spawn_interval_max_seconds: float = 12.0
+    random_compound_probability: float = 0.25
+
+    rag_enabled: bool = True
+    # Source types eligible for vector search. Real embeddings landed (W5), so
+    # this is the whole seeded corpus — regulations and SOPs are vector-searched
+    # same as incidents; the deterministic SQL path only covers a source type
+    # the vector search didn't reach. Env override is JSON, e.g.
+    # RAG_VECTOR_SOURCE_TYPES='["historical_incidents","regulations"]'
+    rag_vector_source_types: list[str] = ["historical_incidents", "regulations", "sops"]
+    # mock | local (both hash-based, no semantics) · openai_compatible (hosted,
+    # needs OPENAI_API_KEY) · ollama (local semantic vectors, no key)
+    embedding_provider: str = "mock"
+    # Only used when EMBEDDING_PROVIDER=ollama. 768-dim; zero-padded to
+    # embedding_dim, which leaves cosine similarity unchanged.
+    ollama_embedding_model: str = "nomic-embed-text"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dim: int = 1536
+    rag_top_k: int = 5
+    # Measured, not guessed — `python -m app.eval.rag_calibration` embeds the
+    # hero query and scores it against rag_vector_source_types, which (W5) is
+    # now the whole seeded corpus — incidents, regulations and SOPs together:
+    #   openai_compatible (text-embedding-3-small), measured 22 Aug 2026:
+    #     relevant 0.675 / distractor 0.495 -> 0.58.
+    #   ollama (nomic-embed-text), measured 22 Aug 2026: relevant 0.788 /
+    #     distractor 0.674 -> 0.73.
+    # Both numbers moved when the source-type scope widened from incidents-only
+    # to all three (W5) — a threshold measured over one scope does not transfer
+    # to another, any more than it transfers between embedding models.
+    # The old 0.72 was inherited from the hash-embedding era, where every score
+    # is noise so the value never mattered.
+    # Re-run rag_calibration after changing EMBEDDING_PROVIDER, the model, or
+    # rag_vector_source_types.
+    rag_score_threshold: float = 0.58
+    rag_timeout_ms: int = 3000
+
+    # LangGraph / LangSmith
+    langchain_tracing_v2: bool = False
+    langchain_api_key: str = ""
+    langchain_project: str = "sop-edith"
+    # Optional deep-link override; empty → https://smith.langchain.com when enabled
+    langsmith_project_url: str = ""
+    agent_spatial_radius_m: float = 15.0
+    # ~0.04 m/px puts Vessel A ↔ Walkway 3 (~337px) inside a 15m radius
+    agent_scale_m_per_px: float = 0.04
+    agent_timeout_seconds: float = 45.0
+    agent_llm_timeout_seconds: float = 20.0
+    # Minimum points for OLS; 2 enables live-demo trajectories before the 3rd sample.
+    predictive_trend_horizon_minutes: float = 15.0
+    predictive_trend_min_r2: float = 0.55
+    predictive_trend_min_samples: int = 2
+
+    # Seeded mode — startup default for the process-wide query filter in
+    # db/session.py. On means list views show real + mock rows together. A demo
+    # reset still forces it off (simulator/engine.py), so this is the boot state,
+    # not a permanent one.
+    seeded_mode_default: bool = True
+
+    # Live feed (ambient plant telemetry) — startup default; Demo UI can toggle
+    ambient_enabled: bool = True
+    ambient_tick_seconds: float = 3.0
+    ambient_coincidence_probability: float = 0.01
+    ambient_heartbeat_seconds: float = 120.0
+    ambient_batch_size: int = 2
+    ambient_status_every_n_ticks: int = 1
+    # Soft telemetry ring size per asset (hydrates UI charts on open)
+    ambient_telemetry_keep: int = 40
+
+    # Emergency Response Orchestrator (W1).
+    # `response_auto_enabled` is the master arm switch. Disarmed, actions are
+    # still evaluated and shown — the reasoning stays visible with nothing
+    # executing, which is also the safe mode for rehearsal.
+    response_auto_enabled: bool = True
+    # How long an armed action counts down before it executes. This is the
+    # supervisor's visible abort window, so it is deliberately long enough to
+    # read a rail row and react, and short enough to still be a response.
+    response_arm_window_seconds: int = 10
+    # A page with no acknowledgement inside this window escalates to the next
+    # contact in escalation_order.
+    response_page_ack_timeout_seconds: int = 120
+    response_tick_seconds: float = 2.0
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

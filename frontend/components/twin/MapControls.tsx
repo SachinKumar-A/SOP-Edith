@@ -1,0 +1,157 @@
+"use client";
+
+import type { MouseEvent } from "react";
+import styles from "./MapControls.module.css";
+
+export type MapLayerId = "ops" | "response";
+
+interface MapControlsProps {
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset: () => void;
+  onOverview?: () => void;
+  /** When set, show an Ops layer toggle in this stack. */
+  opsEnabled?: boolean;
+  onToggleOps?: () => void;
+  /** When set, show the automatic-response device layer toggle. */
+  responseEnabled?: boolean;
+  onToggleResponse?: () => void;
+  shiftForDrawer?: boolean;
+}
+
+export function MapControls({
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  onOverview,
+  opsEnabled = false,
+  onToggleOps,
+  responseEnabled = false,
+  onToggleResponse,
+  shiftForDrawer = false,
+}: MapControlsProps) {
+  const showOps = typeof onToggleOps === "function";
+  const showResponse = typeof onToggleResponse === "function";
+
+  function handleToggleOps(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleOps?.();
+  }
+
+  function handleToggleResponse(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleResponse?.();
+  }
+
+  return (
+    <div
+      className={styles.controls}
+      data-shift={shiftForDrawer ? "true" : undefined}
+      role="group"
+      aria-label="Map controls"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={styles.btn}
+        onClick={onZoomIn}
+        aria-label="Zoom in"
+        title="Zoom in"
+      >
+        +
+      </button>
+      <button
+        type="button"
+        className={styles.btn}
+        onClick={onZoomOut}
+        aria-label="Zoom out"
+        title="Zoom out"
+      >
+        −
+      </button>
+      <button
+        type="button"
+        className={`${styles.btn} ${styles.btnReset}`}
+        onClick={onReset}
+        aria-label="Reset view"
+        title="Reset view"
+      >
+        <span>⤢</span>
+      </button>
+      {onOverview ? (
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnOverview}`}
+          onClick={onOverview}
+          aria-label="All floors overview"
+          title="All floors"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <rect
+              x="1.5"
+              y="3"
+              width="3.5"
+              height="10"
+              rx="0.8"
+              fill="currentColor"
+              opacity="0.9"
+            />
+            <rect
+              x="6.25"
+              y="3"
+              width="3.5"
+              height="10"
+              rx="0.8"
+              fill="currentColor"
+              opacity="0.9"
+            />
+            <rect
+              x="11"
+              y="3"
+              width="3.5"
+              height="10"
+              rx="0.8"
+              fill="currentColor"
+              opacity="0.9"
+            />
+          </svg>
+        </button>
+      ) : null}
+      {showOps ? (
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnOps}`}
+          data-active={opsEnabled ? "true" : undefined}
+          aria-pressed={opsEnabled}
+          title={
+            opsEnabled
+              ? "Hide ops chips (permits, isolation, occupancy)"
+              : "Show ops chips (permits, isolation, occupancy)"
+          }
+          onClick={handleToggleOps}
+        >
+          <span className={styles.opsLabel}>Ops</span>
+        </button>
+      ) : null}
+      {showResponse ? (
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnOps}`}
+          data-active={responseEnabled ? "true" : undefined}
+          aria-pressed={responseEnabled}
+          title={
+            responseEnabled
+              ? "Hide automatic response equipment"
+              : "Show automatic response equipment (ventilation, gates, alarms)"
+          }
+          onClick={handleToggleResponse}
+        >
+          <span className={styles.opsLabel}>Auto</span>
+        </button>
+      ) : null}
+    </div>
+  );
+}
