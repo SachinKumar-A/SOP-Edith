@@ -1,6 +1,6 @@
 # Archive
 
-Historical and superseded documents — kept for record, not as current reference. **Do not build from these.** For the current state of the project, start with [`docs/comprehensive-guide.md`](../comprehensive-guide.md); per root `CLAUDE.md`, when any doc conflicts with the running code, the code wins.
+Historical and superseded documents — kept for record, not as current reference. **Do not build from these.** For the current state of the project, start with [`docs/comprehensive-guide.md`](../comprehensive-guide.md). When any doc conflicts with the running code, the code wins.
 
 ## Pre-build design docs
 

@@ -102,4 +102,16 @@ cd frontend && npx tsx --test lib/*.test.ts
 Pure-logic backend tests (`test_state_machine.py`, `test_agent_routing.py`, `test_agents_langgraph.py`, `test_ambient.py`, `test_config_thresholds.py`, `test_scenario_dsl.py`) need no database and finish in under a second. The rest spin a real Postgres-backed app instance — run them a file at a time.
 
 
-`CLAUDE.md` at the repo root has the full architectural map for anyone (human or AI) working in this codebase.
+[`docs/comprehensive-guide.md`](docs/comprehensive-guide.md) has the full architectural map: the derived-facts engine, the hazard-pathway risk model, the multi-agent pipeline, the audit chain, and the evaluation methodology.
+
+## Team
+
+Built by **Team EDITH**:
+
+| | |
+| --- | --- |
+| **A Sachin Kumar** | Team Lead |
+| **D M Shahrukesh** | Research & Development |
+| **R Srinivas** | Research & Development |
+
+Where this documentation and the running code disagree, the code is correct. Regenerate the evaluation figures with `python -m app.eval.run` before quoting them.
